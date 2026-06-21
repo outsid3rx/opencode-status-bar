@@ -68,6 +68,10 @@ Installs the hooks (status + open/close lifecycle) automatically from inside Cla
 
 You'll still drag the app into Applications once (the plugin launches it on session start).
 
+### Using the Claude Code desktop app? Hide its built-in icon
+
+The desktop app shows its own menu bar icon (the quick-screenshot one). To avoid two icons sitting side by side, open Claude's **Settings → General** and turn that built-in menu bar item off. Claude Status Bar then gives you a single, animated indicator.
+
 ## How it works
 
 Claude Code fires hooks on its lifecycle events. Small scripts write the current status to `~/.claude/statusbar/state.json`; the menu bar app polls that file and renders the spark + label. Two `SessionStart` / `SessionEnd` hooks launch the app when Claude Code opens and quit it when the **last** session closes (a session counter handles multiple windows).
