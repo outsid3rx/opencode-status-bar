@@ -1,6 +1,6 @@
-<div align="center">
+
 <img width="672" height="80" alt="Screen Recording 2026-06-23 at 3 57 47 AM 2" src="https://github.com/user-attachments/assets/97876ac9-cd4f-431b-873a-93220de5bd99" />
-</div>
+
 <br>
 
 ## Claude Status Bar
@@ -50,7 +50,6 @@ This is a **Claude Code** indicator, driven by Claude Code hooks. It tracks:
 | Claude Code Desktop — **Code** tab | ✅ |
 | Claude Desktop — **Chat** tab | ❌ |
 | **Cowork** | ❌ |
-| IDE extensions (VS Code / JetBrains) | ❌ |
 
 Chat and Cowork don't use Claude Code's hook system, so the status bar won't update while you're in those. It reflects Claude **Code** activity only.
 
@@ -93,10 +92,6 @@ Installs the hooks (status + open/close lifecycle) automatically from inside Cla
 
 The plugin installs the hooks but not the app itself, so drag **Claude Status Bar** into Applications once (from the DMG). The plugin launches it automatically on session start.
 
-### Using the Claude Code desktop app? Hide its built-in icon
-
-The desktop app shows its own menu bar icon (the quick-screenshot one). To avoid two icons sitting side by side, open Claude's **Settings → General** and turn that built-in menu bar item off. Claude Status Bar then gives you a single, animated indicator.
-
 ## How it works
 
 Claude Code fires hooks on its lifecycle and tool events. Small scripts write the current status to `~/.claude/statusbar/state.json`; the menu bar app polls that file and renders the spark + label. The `SessionStart` hook launches the app when Claude Code opens (in the terminal, the desktop app, or a new conversation). The app then quits itself once Claude is gone, that is, when the Claude desktop app isn't running and no Claude Code session is active. Active sessions are tracked as one small file each under `~/.claude/statusbar/sessions.d/`, so any working session keeps the bar up.
@@ -126,26 +121,13 @@ Requires the Xcode Command Line Tools (`xcode-select --install`).
 
 ## Troubleshooting
 
-**The icon ran for a few seconds, then disappeared.** That's the app exiting on purpose, not a crash. It's a live indicator for Claude Code, so when no Claude session or desktop app is running it has nothing to show and exits cleanly. Run it with Claude Code open (or start a `claude` session) and it stays. You don't launch the app yourself; the session launches it.
-
+You don't launch the app yourself; the session launches it.
 **The icon doesn't appear at all.**
 - Make sure a Claude session is actually running. Start a new session (or restart Claude Code) and the bar appears automatically.
 - A session that was already running *before* you installed gets picked up once it does something, but starting a fresh session is the reliable way to bring the bar up the first time.
 - Confirm it's running with `pgrep -x ClaudeStatusBar`: a number means it's running (it may just be hidden, see below); no output means it exited because no Claude session is active.
 - If first-launch setup never took, run the installer manually: `node "/Applications/ClaudeStatusBar.app/Contents/Resources/install.js"`
-
-**It's running but I can't see it.** On a Mac with a notch, a crowded menu bar can hide icons behind the notch. Remove some other menu bar items, or use a menu bar manager (Ice, Bartender), to reveal it.
-
-**Uninstalling.** See [Uninstall](#uninstall) above. Dragging the app to the Trash alone leaves the hooks behind, so run the uninstall command first.
-
-## Roadmap
-
-Planned or under consideration:
-
-- **Multi-session view.** When several Claude Code sessions run at once, summarize them in one icon (priority-based) and list each session, with its own status and timer, when you click the menu.
-- More animation styles.
-
-Got a request? [Open an issue](../../issues).
+- Seeing 2 icons? The desktop app shows its own menu bar icon (the quick-screenshot one). To avoid two icons sitting side by side, open Claude's **Settings → General** and turn that built-in menu bar item off.
 
 ## Trademark / not affiliated
 
