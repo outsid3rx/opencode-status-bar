@@ -3,6 +3,11 @@
 All notable changes to Claude Status Bar are documented here. This project follows
 [Semantic Versioning](https://semver.org/).
 
+## [0.2.2] - 2026-06-25
+
+### Fixed
+- Install now works no matter how you installed Node.js. On first launch the app sets up the Claude Code hooks by running its installer with `node`, but it previously only looked on a login shell's PATH. That missed Node installed through version managers like nvm and fnm (which configure your interactive shell, not the login shell), so for those users the menu bar icon would appear but never animate because no hooks ever got written. The app now checks the common Node locations (Homebrew, the system path, nvm, fnm, asdf, Volta) and falls back to your interactive shell, so the hooks install reliably. Existing installs that were stuck this way heal themselves on the next launch after updating.
+
 ## [0.2.1] - 2026-06-25
 
 ### Fixed
@@ -68,6 +73,7 @@ All notable changes to Claude Status Bar are documented here. This project follo
 - Signed and notarized DMG so it opens without a Gatekeeper warning.
 - Claude Code plugin marketplace manifest for the plugin install path.
 
+[0.2.2]: https://github.com/m1ckc3s/claude-status-bar/releases/tag/v0.2.2
 [0.2.1]: https://github.com/m1ckc3s/claude-status-bar/releases/tag/v0.2.1
 [0.2.0]: https://github.com/m1ckc3s/claude-status-bar/releases/tag/v0.2.0
 [0.1.0]: https://github.com/m1ckc3s/claude-status-bar/releases/tag/v0.1.0

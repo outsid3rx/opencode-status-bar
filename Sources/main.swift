@@ -28,7 +28,7 @@ final class StatusController: NSObject, NSMenuDelegate {
 
     enum AnimStyle: String { case web, code, crab }
     var animStyle: AnimStyle = .web
-    var showTimer = true
+    var showTimer = false
     var iconSystem = false // false = brand Orange; true = adaptive black/white (template image)
     var playCompletionSound = false // chime when a turn longer than ~1 min finishes
     lazy var completionSound: NSSound? = {
@@ -90,13 +90,52 @@ final class StatusController: NSObject, NSMenuDelegate {
         guard d.string(forKey: "installedVersion") != current,
               let installer = Bundle.main.path(forResource: "install", ofType: "js") else { return }
         DispatchQueue.global().async {
+            guard let node = Self.locateNode() else {
+                NSLog("ClaudeStatusBar: could not find node; hooks not installed (will retry next launch)")
+                return
+            }
             let task = Process()
-            task.executableURL = URL(fileURLWithPath: "/bin/zsh") // login shell so `node` is on PATH
-            task.arguments = ["-lc", "node \"\(installer)\""]
+            task.executableURL = URL(fileURLWithPath: node)
+            task.arguments = [installer]
             try? task.run()
             task.waitUntilExit()
             if task.terminationStatus == 0 { UserDefaults.standard.set(current, forKey: "installedVersion") }
         }
+    }
+
+    // `/bin/zsh -lc node` saw only the login PATH, missing nvm/fnm set in .zshrc.
+    static func locateNode() -> String? {
+        let fm = FileManager.default
+        let home = NSHomeDirectory()
+        var candidates = [
+            "/opt/homebrew/bin/node",
+            "/usr/local/bin/node",
+            "/usr/bin/node",
+            "\(home)/.volta/bin/node",
+            "\(home)/.asdf/shims/node",
+        ]
+        let nvmDir = "\(home)/.nvm/versions/node"
+        if let versions = try? fm.contentsOfDirectory(atPath: nvmDir) {
+            for v in versions.sorted(by: >) { candidates.append("\(nvmDir)/\(v)/bin/node") }
+        }
+        for path in candidates where fm.isExecutableFile(atPath: path) { return path }
+
+        for args in [["-ilc", "command -v node"], ["-lc", "command -v node"]] {
+            let p = Process()
+            p.executableURL = URL(fileURLWithPath: "/bin/zsh")
+            p.arguments = args
+            let pipe = Pipe()
+            p.standardOutput = pipe
+            p.standardError = FileHandle.nullDevice
+            guard (try? p.run()) != nil else { continue }
+            p.waitUntilExit()
+            let data = pipe.fileHandleForReading.readDataToEndOfFile()
+            let path = (String(data: data, encoding: .utf8) ?? "")
+                .split(separator: "\n").last.map(String.init)?
+                .trimmingCharacters(in: .whitespaces) ?? ""
+            if !path.isEmpty, fm.isExecutableFile(atPath: path) { return path }
+        }
+        return nil
     }
 
     // MARK: update check
@@ -164,7 +203,7 @@ final class StatusController: NSObject, NSMenuDelegate {
 
         menu.addItem(.separator())
         menu.addItem(header("Animation"))
-        for (style, name) in [(AnimStyle.web, "Claude"), (AnimStyle.code, "Claude Code"), (AnimStyle.crab, "Crab Walking")] {
+        for (style, name) in [(AnimStyle.web, "Claude Spark"), (AnimStyle.code, "Claude Code"), (AnimStyle.crab, "Crab Walking")] {
             let it = NSMenuItem(title: name, action: #selector(chooseStyle(_:)), keyEquivalent: "")
             it.target = self
             it.representedObject = style.rawValue
