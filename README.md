@@ -40,7 +40,7 @@ Everything is controlled from the menu:
   - **Claude Spark**, the web/chat "morph" spark
   - **Claude Code**, the terminal glyph spinner
   - **Crab Walking**, a pixel-art Clawd crab that scuttles while Claude works
-- **Icon color:** **Orange** or **System** (adaptive black/white). The Claude and Claude Code styles follow this setting; Crab Walking is always its orange pixel-art self.
+- **Icon color:** **Orange** or **System** (adaptive black/white). All three styles follow this setting: in System mode Crab Walking renders as a shaded monochrome silhouette that matches the menu bar, and in Orange mode it stays its full-color pixel-art self.
 - **Version and update:** the menu shows your current version, with a one-click "Update available" when a newer release exists.
 
 ## Where it works

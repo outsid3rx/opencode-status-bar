@@ -238,7 +238,7 @@ final class StatusController: NSObject, NSMenuDelegate {
     lazy var crabFrames: [NSImage] = StatusController.decodePNGs(clawdCrabFramePNGs)
     // Template frames: bright pixels (white eyes) become transparent holes so they're
     // visible as negative space against the menu bar in System color mode.
-    lazy var crabTemplateFrames: [NSImage] = crabFrames.map { StatusController.makeMonoCrab($0) }
+    lazy var crabTemplateFrames: [NSImage] = crabFrames.map { adaptiveCrabFrame($0) }
     var fps: Double {
         switch animStyle {
         case .web: return spriteFPS
@@ -1055,46 +1055,8 @@ final class StatusController: NSObject, NSMenuDelegate {
         return tint(logoSet.isEmpty ? frames : logoSet, color: color, frame: 0)
     }
 
-    // Converts a full-color crab frame into a black-on-transparent template by reading
-    // raw bitmap bytes via CGContext (avoids NSColor color-space conversion failures).
-    // Dark pixels (eyes/outlines, lum < 0.2) become transparent holes — visible as
-    // negative space against the menu bar in System color mode.
-    static func makeMonoCrab(_ src: NSImage) -> NSImage {
-        guard let tiff = src.tiffRepresentation,
-              let bmp = NSBitmapImageRep(data: tiff),
-              let cgSrc = bmp.cgImage else { return src }
-        let pw = bmp.pixelsWide, ph = bmp.pixelsHigh
-        let cs = CGColorSpaceCreateDeviceRGB()
-        let bi = CGImageAlphaInfo.premultipliedLast.rawValue
-        guard let inCtx  = CGContext(data: nil, width: pw, height: ph,
-                                      bitsPerComponent: 8, bytesPerRow: pw * 4, space: cs, bitmapInfo: bi),
-              let outCtx = CGContext(data: nil, width: pw, height: ph,
-                                      bitsPerComponent: 8, bytesPerRow: pw * 4, space: cs, bitmapInfo: bi)
-        else { return src }
-        inCtx.draw(cgSrc, in: CGRect(x: 0, y: 0, width: pw, height: ph))
-        guard let inRaw = inCtx.data, let outRaw = outCtx.data else { return src }
-        let inp = inRaw.bindMemory(to: UInt8.self, capacity: pw * ph * 4)
-        let out = outRaw.bindMemory(to: UInt8.self, capacity: pw * ph * 4)
-        for i in 0..<(pw * ph) {
-            let off = i * 4
-            let rawA = inp[off + 3]
-            guard rawA > 0 else { continue } // background stays transparent
-            let af = CGFloat(rawA) / 255
-            let r  = CGFloat(inp[off])     / (255 * af)
-            let g  = CGFloat(inp[off + 1]) / (255 * af)
-            let b  = CGFloat(inp[off + 2]) / (255 * af)
-            let lum = 0.299 * r + 0.587 * g + 0.114 * b
-            // Dark pixels (eyes, outlines, lum < 0.2) → transparent holes visible as
-            // negative space; colored body pixels → opaque black for template rendering.
-            out[off + 3] = lum < 0.2 ? 0 : 255
-        }
-        guard let outCG = outCtx.makeImage() else { return src }
-        let img = NSImage(cgImage: outCG, size: src.size)
-        img.isTemplate = true
-        return img
-    }
-
-    // nil color => adaptive template (System); non-nil => tinted silhouette (Orange).
+    // nil color (System) => adaptive shaded template (see adaptiveCrabFrame in CrabRender.swift);
+    // non-nil (Orange) => the original full-color sprite, drawn as-is.
     func crabIcon(color: NSColor?, frame: Int) -> NSImage {
         guard !crabFrames.isEmpty else { return NSImage(size: NSSize(width: 18, height: 18)) }
         let pool = color == nil ? crabTemplateFrames : crabFrames
