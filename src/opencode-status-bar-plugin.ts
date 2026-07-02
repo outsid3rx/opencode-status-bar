@@ -150,14 +150,38 @@ function isWorking(state?: string): boolean {
   return state === 'thinking' || state === 'tool'
 }
 
+const DEBUG_LOG_MAX_SIZE = 2 * 1024 * 1024
+const DEBUG_LOG_KEEP_SIZE = 256 * 1024
+
+function isDebugLoggingEnabled(): boolean {
+  const level = (process.env.OPENCODE_STATUS_BAR_LOG_LEVEL || '').toLowerCase()
+  return level === 'debug' || process.env.OPENCODE_STATUS_BAR_DEBUG === '1'
+}
+
 function debugLog(payload: Record<string, unknown>): void {
+  if (!isDebugLoggingEnabled()) return
   try {
     const dir = debugLogDir()
     fs.mkdirSync(dir, { recursive: true })
+    const logPath = path.join(dir, 'debug.log')
+    trimDebugLogIfNeeded(logPath)
     const line = JSON.stringify({ ts: new Date().toISOString(), ...payload }) + '\n'
-    fs.appendFileSync(path.join(dir, 'debug.log'), line)
+    fs.appendFileSync(logPath, line)
   } catch {
     // Debug logging must never break the plugin.
+  }
+}
+
+function trimDebugLogIfNeeded(logPath: string): void {
+  try {
+    const stats = fs.statSync(logPath)
+    if (stats.size <= DEBUG_LOG_MAX_SIZE) return
+    const content = fs.readFileSync(logPath, 'utf8')
+    const tail = content.slice(-DEBUG_LOG_KEEP_SIZE)
+    const firstNewline = tail.indexOf('\n')
+    fs.writeFileSync(logPath, firstNewline === -1 ? tail : tail.slice(firstNewline + 1))
+  } catch {
+    // Ignore rotation errors.
   }
 }
 

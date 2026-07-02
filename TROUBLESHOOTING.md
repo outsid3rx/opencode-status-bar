@@ -9,7 +9,23 @@
 - Make sure an OpenCode session is actually running. Start a new session (or restart OpenCode) and the bar appears automatically.
 - A session that was already running _before_ you installed gets picked up once it does something, but starting a fresh session is the reliable way to bring the bar up the first time.
 - Confirm it's running with `pgrep -x OpenCodeStatusBar`: a number means it's running (it may just be hidden), no output means it exited because no OpenCode session is active.
-- If first-launch setup never took, copy the plugin manually: `cp "/Applications/OpenCodeStatusBar.app/Contents/Resources/opencode-status-bar.ts" ~/.config/opencode/plugins/`
+- If first-launch setup never took, copy the plugin manually: `cp "/Applications/OpenCodeStatusBar.app/Contents/Resources/opencode-status-bar.js" ~/.config/opencode/plugins/`
+
+**Need detailed logs?**
+
+By default the app and the plugin only log essential events (startup, plugin install, errors). To enable verbose debug logging, set the environment variable before starting `opencode`:
+
+```bash
+export OPENCODE_STATUS_BAR_LOG_LEVEL=debug
+opencode
+```
+
+Then look at:
+
+- App log: `~/Library/Logs/OpenCodeStatusBar/OpenCodeStatusBar.log`
+- Plugin log: `~/.local/state/opencode/statusbar/debug.log`
+
+Both logs are capped automatically (app ~1 MB, plugin ~2 MB) and trimmed to their last chunk when the limit is exceeded, so they won't grow forever.
 
 ---
 

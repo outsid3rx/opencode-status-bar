@@ -1,35 +1,79 @@
 import Cocoa
 
+enum LogLevel: Int, Comparable {
+    case debug = 0
+    case info
+    case warning
+    case error
+
+    static func < (lhs: LogLevel, rhs: LogLevel) -> Bool { lhs.rawValue < rhs.rawValue }
+}
+
 // Simple file logger. Writes to ~/Library/Logs/OpenCodeStatusBar/OpenCodeStatusBar.log
 // and mirrors to NSLog so Console.app can also see the messages.
+//
+// Default level is `info`. Set `OPENCODE_STATUS_BAR_LOG_LEVEL=debug` in the environment
+// that launches `opencode` (or the app itself) to enable verbose logging.
 final class Logger {
     static let shared = Logger()
     private let dateFormatter = DateFormatter()
     private let queue = DispatchQueue(label: "com.local.opencodestatusbar.logger")
     private var fileHandle: FileHandle?
+    private var logPath: String = ""
+    private let maxLogSize: UInt64 = 1 * 1024 * 1024
+    private let keepLogSize: UInt64 = 256 * 1024
+    private let currentLevel: LogLevel
 
     init() {
         dateFormatter.dateFormat = "yyyy-MM-dd HH:mm:ss.SSS"
+        currentLevel = Self.parseLevel(ProcessInfo.processInfo.environment["OPENCODE_STATUS_BAR_LOG_LEVEL"])
         let logDir = (NSHomeDirectory() as NSString).appendingPathComponent("Library/Logs/OpenCodeStatusBar")
         let fm = FileManager.default
         try? fm.createDirectory(atPath: logDir, withIntermediateDirectories: true, attributes: nil)
-        let logPath = (logDir as NSString).appendingPathComponent("OpenCodeStatusBar.log")
+        logPath = (logDir as NSString).appendingPathComponent("OpenCodeStatusBar.log")
         fm.createFile(atPath: logPath, contents: nil, attributes: nil)
         fileHandle = try? FileHandle(forWritingTo: URL(fileURLWithPath: logPath))
     }
 
-    func log(_ message: String) {
+    func log(_ message: String, level: LogLevel = .info) {
+        guard level >= currentLevel else { return }
         let line = "[\(dateFormatter.string(from: Date()))] \(message)\n"
         queue.async { [weak self] in
             guard let self = self, let data = line.data(using: .utf8) else { return }
+            self.truncateIfNeeded()
             do {
                 try self.fileHandle?.write(contentsOf: data)
-                try self.fileHandle?.synchronize()
             } catch {
                 // If logging fails, avoid infinite loops; fall back to NSLog only.
             }
             NSLog("OpenCodeStatusBar: %@", message)
         }
+    }
+
+    private static func parseLevel(_ raw: String?) -> LogLevel {
+        switch raw?.lowercased() {
+        case "debug": return .debug
+        case "info", nil: return .info
+        case "warn", "warning": return .warning
+        case "error": return .error
+        default: return .info
+        }
+    }
+
+    private func truncateIfNeeded() {
+        guard let attrs = try? FileManager.default.attributesOfItem(atPath: logPath),
+              let size = attrs[.size] as? UInt64,
+              size > maxLogSize else { return }
+
+        guard let handle = FileHandle(forReadingAtPath: logPath) else { return }
+        defer { handle.closeFile() }
+        handle.seek(toFileOffset: size - keepLogSize)
+        let tail = handle.readDataToEndOfFile()
+
+        fileHandle?.closeFile()
+        FileManager.default.createFile(atPath: logPath, contents: tail, attributes: nil)
+        fileHandle = try? FileHandle(forWritingTo: URL(fileURLWithPath: logPath))
+        fileHandle?.seekToEndOfFile()
     }
 }
 
@@ -372,7 +416,7 @@ final class StatusController: NSObject, NSMenuDelegate {
             do {
                 try fm.createDirectory(atPath: self.pluginInstallDir, withIntermediateDirectories: true, attributes: nil)
             } catch {
-                Logger.shared.log("could not create plugin dir: \(error.localizedDescription)")
+                Logger.shared.log("could not create plugin dir: \(error.localizedDescription)", level: .error)
                 return
             }
             let dest = (self.pluginInstallDir as NSString).appendingPathComponent("opencode-status-bar.js")
@@ -380,9 +424,9 @@ final class StatusController: NSObject, NSMenuDelegate {
             do {
                 try fm.copyItem(atPath: bundled, toPath: dest)
                 UserDefaults.standard.set(current, forKey: "installedPluginVersion")
-                Logger.shared.log("copied plugin to \(dest)")
+                Logger.shared.log("copied plugin to \(dest)", level: .info)
             } catch {
-                Logger.shared.log("failed to copy plugin: \(error.localizedDescription)")
+                Logger.shared.log("failed to copy plugin: \(error.localizedDescription)", level: .error)
             }
         }
     }
@@ -886,7 +930,7 @@ final class StatusController: NSObject, NSMenuDelegate {
 
             // Permission sound edge. If the user doesn't want the chime, they can toggle it off.
             if prevState != "permission" && s.state == "permission" {
-                Logger.shared.log("permission edge detected session=\(id) playPermissionSound=\(playPermissionSound)")
+                Logger.shared.log("permission edge detected session=\(id) playPermissionSound=\(playPermissionSound)", level: .debug)
                 if playPermissionSound {
                     permissionChime = true
                 }
@@ -898,7 +942,7 @@ final class StatusController: NSObject, NSMenuDelegate {
         for id in Array(soundPrev.keys) where sessions[id] == nil { soundPrev[id] = nil; turnStart[id] = nil }
         if (chime && playCompletionSound) || permissionChime {
             let played = completionSound?.play() ?? false
-            Logger.shared.log("playSound chime=\(chime) completionEnabled=\(playCompletionSound) permissionChime=\(permissionChime) played=\(played)")
+            Logger.shared.log("playSound chime=\(chime) completionEnabled=\(playCompletionSound) permissionChime=\(permissionChime) played=\(played)", level: .debug)
         }
 
         // Surface the single highest-priority session (permission > working > …); ties broken by
@@ -965,7 +1009,7 @@ final class StatusController: NSObject, NSMenuDelegate {
         let now = Date()
         let age = now.timeIntervalSince(launchedAt)
         let sessions = sessionCount()
-        Logger.shared.log("checkLifecycle age=\(String(format: "%.1f", age)) sessions=\(sessions) autoLaunch=\(isAutoLaunch) hasSeenSessions=\(hasSeenSessions)")
+        Logger.shared.log("checkLifecycle age=\(String(format: "%.1f", age)) sessions=\(sessions) autoLaunch=\(isAutoLaunch) hasSeenSessions=\(hasSeenSessions)", level: .debug)
         if age < launchGrace { return }
         if sessions > 0 {
             hasSeenSessions = true
@@ -973,25 +1017,25 @@ final class StatusController: NSObject, NSMenuDelegate {
             return
         }
         if !isAutoLaunch {
-            Logger.shared.log("manual launch, no sessions, staying alive")
+            Logger.shared.log("manual launch, no sessions, staying alive", level: .debug)
             return
         }
         // Auto-launched from the plugin: give OpenCode time to emit its first event
         // and write a state file. Don't start the idle timer until we've seen at least
         // one session, or until the bootstrap timeout expires.
         if !hasSeenSessions, age < bootstrapTimeout {
-            Logger.shared.log("auto-launch bootstrap grace, waiting for first session")
+            Logger.shared.log("auto-launch bootstrap grace, waiting for first session", level: .debug)
             return
         }
         if let since = notNeededSince {
             let idle = now.timeIntervalSince(since)
-            Logger.shared.log("auto-launch idle for \(String(format: "%.1f", idle))s")
+            Logger.shared.log("auto-launch idle for \(String(format: "%.1f", idle))s", level: .debug)
             if idle >= idleQuitDelay {
-                Logger.shared.log("auto-launch quitting")
+                Logger.shared.log("auto-launch quitting", level: .debug)
                 NSApp.terminate(nil)
             }
         } else {
-            Logger.shared.log("auto-launch no sessions, starting idle timer")
+            Logger.shared.log("auto-launch no sessions, starting idle timer", level: .debug)
             notNeededSince = now
         }
     }
@@ -999,7 +1043,7 @@ final class StatusController: NSObject, NSMenuDelegate {
     // MARK: render
 
     func render(label: String, color: NSColor?, animate: Bool, startedAt: Double, dot: Bool = false) {
-        Logger.shared.log("render label='\(label)' animate=\(animate) startedAt=\(startedAt) dot=\(dot)")
+        Logger.shared.log("render label='\(label)' animate=\(animate) startedAt=\(startedAt) dot=\(dot)", level: .debug)
         guard let button = statusItem.button else { return }
         button.contentTintColor = nil // we paint the icon color ourselves; template-tint is unreliable
         activeBase = label
