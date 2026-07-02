@@ -1,6 +1,6 @@
 ## OpenCode Status Bar
 
-<img width="1286" height="64" alt="OpenCode Status Bar demo" src="https://github.com/user-attachments/assets/a9235da4-2dcc-48ef-9bb9-bf4edb138031" />
+![OpenCode Status Bar demo](https://raw.githubusercontent.com/outsid3rx/opencode-status-bar/main/assets/demo.gif)
 
 > This project is a fork of [claude-status-bar](https://github.com/m1ckc3s/claude-status-bar) by Mick Cesanek, adapted for [OpenCode](https://opencode.ai).
 
