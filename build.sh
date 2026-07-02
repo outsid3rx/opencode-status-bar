@@ -33,8 +33,8 @@ cat > "$APP/Contents/Info.plist" <<'PLIST'
   <key>CFBundleDisplayName</key><string>OpenCode Status Bar</string>
   <key>CFBundleIdentifier</key><string>com.local.opencodestatusbar</string>
   <key>CFBundleExecutable</key><string>OpenCodeStatusBar</string>
-  <key>CFBundleVersion</key><string>0.4.0</string>
-  <key>CFBundleShortVersionString</key><string>0.4.0</string>
+  <key>CFBundleVersion</key><string>0.5.0</string>
+  <key>CFBundleShortVersionString</key><string>0.5.0</string>
   <key>CFBundleIconFile</key><string>AppIcon</string>
   <key>CFBundlePackageType</key><string>APPL</string>
   <key>LSMinimumSystemVersion</key><string>12.0</string>
