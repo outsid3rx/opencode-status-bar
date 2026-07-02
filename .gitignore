@@ -1,7 +1,21 @@
+# Build artifacts
 build/
 *.dmg
-.DS_Store
+
+# Dependencies
 node_modules/
+.pnpm-store/
+
+# Generated plugin output
+.opencode/plugins/
+
+# IDE / OS
+.idea/
+.vscode/
+*.swp
+*.log
+.env
+.DS_Store
 
 # Private maintainer notes (kept out of the public repo)
 CLAUDE.md

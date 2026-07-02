@@ -1,119 +1,108 @@
-<img width="672" height="80" alt="Screen Recording 2026-06-23 at 3 57 47 AM 2" src="https://github.com/user-attachments/assets/97876ac9-cd4f-431b-873a-93220de5bd99" />
-<br><br>
+## OpenCode Status Bar
 
-<a href="https://github.com/m1ckc3s/claude-status-bar/releases/latest/download/ClaudeStatusBar.dmg"><img src="assets/download.png" alt="Download ClaudeStatusBar.dmg for macOS" width="260"></a>
-<br>
+<img width="1286" height="64" alt="OpenCode Status Bar demo" src="https://github.com/user-attachments/assets/a9235da4-2dcc-48ef-9bb9-bf4edb138031" />
 
-## Claude Status Bar
+> This project is a fork of [claude-status-bar](https://github.com/m1ckc3s/claude-status-bar) by Mick Cesanek, adapted for [OpenCode](https://opencode.ai).
 
-A tiny macOS menu bar app that shows **Claude Code's live status**: an animated Claude icon while it's thinking or running a tool, a yellow dot when it's awaiting your permission, and the elapsed time of the current turn. Lightweight, no window, no dock icon, no usage dashboards.
+A tiny macOS menu bar app that shows **OpenCode's live status**: a spinner while it's thinking or running a tool, a yellow dot when it's awaiting your permission, and the elapsed time of the current turn. Lightweight, no window, no dock icon, no usage dashboards.
 
-> Built so you can tab away during a long "thinking" stretch and still see, at a glance, whether Claude is working, waiting on you, or done.
-
-<img width="600" height="488" alt="Screen Recording 2026-06-26 at 10 01 17 PM (1)" src="https://github.com/user-attachments/assets/4cc7a726-abe5-4e9c-aa5f-8525ddf6f398" />
+> Built so you can tab away during a long "thinking" stretch and still see, at a glance, whether OpenCode is working, waiting on you, or done.
 
 > [!IMPORTANT]
-> **Multi-session support.** When several Claude Code sessions run at once (multiple terminals, or
-> a terminal plus the desktop app), the menu bar surfaces the highest-priority one: a session
-> awaiting your permission is never hidden behind one that's thinking. The dropdown lists 
-> every live session. Click a session to jump to it: desktop sessions focus
-> the Claude app, terminal sessions bring their terminal app to the front.
-> Precise per-tab focus is in progress: **[issue #19 →](https://github.com/m1ckc3s/claude-status-bar/issues/19)**.
+> **Multi-session support.** When several OpenCode sessions run at once (multiple terminals), the menu bar surfaces the highest-priority one: a session awaiting your permission is never hidden behind one that's thinking. The dropdown lists every live session. Click a session to bring its terminal app to the front.
 
 ---
 
 ## What it shows
 
 - **Thinking / working** — the icon animates, with a live `1m 1s` timer.
-- **Running a tool** — a short label (`Editing`, `Reading`, `Running command`, `Using tool`, …).
-- **Awaiting permission** — a paused yellow dot, in both the CLI and the Desktop app.
-- **Idle / done** — rests on the Claude logo.
+- **Running a tool** — a short label (`Editing`, `Reading`, `Writing`, `Running command`, …).
+- **Awaiting permission** — a paused yellow dot.
+- **Idle / done** — shows `Done` and rests on a prompt caret.
 
 Everything is controlled from the menu:
 
 - **Show timer:** toggle the elapsed `1m 1s` clock.
-- **Play completion sound:** a soft chime when a turn longer than a minute finishes (off by default).
-- **Animation style:**
-  - **Claude Spark**, the web/chat "morph" spark
-  - **Claude Code**, the terminal glyph spinner
-  - **Crab Walking**, a pixel-art Clawd crab that scuttles while Claude works
-- **Icon color:** **Orange** or **System** (adaptive black/white). All three styles follow this setting: in System mode Crab Walking renders as a shaded monochrome silhouette that matches the menu bar.
+- **Play completion sound:** a soft chime whenever a working session finishes (on by default).
+- **Color theme:** **Orange** or **System** (adaptive black/white).
 - **Version and update:** the menu shows your current version, with a one-click "Update available" when a newer release exists.
 
 ## Where it works
 
-| Surface | Tracked? |
-|---|---|
-| Claude Code CLI (terminal) | ✅ |
-| Claude Code Desktop — **Code** tab | ✅ |
-| Cursor (Claude Code extension) | ✅ |
-| Claude Desktop — **Chat** tab | ❌ |
-| **Cowork** | ❌ |
+| Surface                 | Tracked?                   |
+| ----------------------- | -------------------------- |
+| OpenCode CLI (terminal) | ✅                         |
+| OpenCode Desktop app    | ❌ (terminal-only for now) |
 
 ## Requirements
 
 - macOS 12+
-- [Claude Code](https://claude.com/claude-code) (CLI or the Desktop app)
-- Node.js
+- [OpenCode](https://opencode.ai) CLI
+- Node.js (for building from source)
 
 ## Install
 
-### Option A — DMG (recommended) 
+### Option A — DMG (recommended)
 
-Signed and notarized.
+1. Download the latest `OpenCodeStatusBar.dmg` from [Releases](https://github.com/outsid3rx/opencode-status-bar/releases).
+2. Open it and drag **OpenCode Status Bar** into Applications.
+3. Because the DMG is not signed with an Apple Developer ID, macOS will show a Gatekeeper warning. Remove the quarantine flag:
 
-1. Download the latest `ClaudeStatusBar.dmg` from [Releases](../../releases).
-2. Open it and drag **Claude Status Bar** into Applications.
-3. Launch it once. On first launch it wires up the Claude Code hooks for you automatically.
-4. Start a new Claude Code session, the icon appears whenever Claude Code is running.
+   ```bash
+   xattr -dr com.apple.quarantine /Applications/OpenCodeStatusBar.app
+   ```
+
+4. Launch **OpenCode Status Bar** once. On first launch it installs the OpenCode plugin for you automatically.
+5. Start a new OpenCode session, the icon appears whenever OpenCode is running.
 
 ### Updating
 
-Download the latest DMG and drag it into Applications (choose **Replace**). That's it: it refreshes its own hooks the next time it starts up (on a version change it re-runs its installer automatically), so there's nothing to run by hand. Your next Claude Code session picks them up.
+Download the latest DMG and drag it into Applications (choose **Replace**). The app refreshes its plugin the next time it starts up, so you don't need to run anything by hand. Your next OpenCode session picks it up.
 
 > [!IMPORTANT]
-> **Updated mid-session?** Sessions already open won't show up until they do something (send a prompt) or you start a new `claude` session.
+> **Updated mid-session?** Sessions already open won't show up until they do something (send a prompt) or you start a new `opencode` session.
 
-### Option B — Claude Code plugin
+### Option B — Manual plugin install
 
-Installs the hooks (status + open/close lifecycle) automatically from inside Claude Code:
+The plugin is built from source and not committed to the repo. First build it:
 
+```bash
+pnpm install
+pnpm build:plugin
 ```
-/plugin marketplace add m1ckc3s/claude-status-bar
-/plugin install claude-status-bar@claude-status-bar
+
+Then copy the built plugin into OpenCode's plugin directory:
+
+```bash
+cp .opencode/plugins/opencode-status-bar.js ~/.config/opencode/plugins/opencode-status-bar.js
 ```
 
-The plugin installs the hooks but not the app itself, so drag **Claude Status Bar** into Applications once (from the DMG). The plugin launches it automatically on session start.
+Finally build the app from source (see [CONTRIBUTING.md](CONTRIBUTING.md)).
 
 ## How it works
 
-The app is stateless. Claude Code fires hooks as it works; the app polls those updates and aggregates them across every live session into a single icon, a permission dot if one needs you, animating if any session is working, resting when all are idle. It launches itself when Claude Code opens and quits when nothing's running, so there's nothing to manage.
+The app is stateless. OpenCode fires events as it works; the plugin writes those updates to `~/.local/state/opencode/statusbar/state.d/`. The app polls that directory and aggregates every live session into a single icon, a permission dot if one needs you, animating if any session is working, resting when all are idle. It launches itself when OpenCode opens and quits when nothing's running, so there's nothing to manage.
 
-The installer merges its hooks into `~/.claude/settings.json` (backing it up first), and the app's only network call is a once-a-day GitHub release check ([details](PRIVACY.md)).
+The app's only network call is a once-a-day GitHub release check ([details](PRIVACY.md)).
 
 ## Troubleshooting
 
-Icon quitting right after you open it, not showing, or not moving in Cursor? See [Troubleshooting](TROUBLESHOOTING.md), most of it is expected behavior, not a bug.
+Icon quitting right after you open it or not showing? See [Troubleshooting](TROUBLESHOOTING.md), most of it is expected behavior, not a bug.
 
 ## Uninstall
 
 ```bash
-node "/Applications/ClaudeStatusBar.app/Contents/Resources/uninstall.js"   # removes only our hooks
+rm ~/.config/opencode/plugins/opencode-status-bar.js
+rm -rf ~/.local/state/opencode/statusbar
 ```
-Then drag the app to the Trash.
+
+Then drag **OpenCode Status Bar** from Applications to the Trash.
 
 ## Acknowledgements
 
-I built this for myself, then open-sourced it because other people might find it handy too, and I'm genuinely thrilled that so many of you do. An extra thank-you to everyone who went the extra mile and contributed code, fixes, and ideas.
+This project was originally built as `claude-status-bar` by Mick Cesanek and then adapted for OpenCode. Thank you to everyone who contributed code, fixes, and ideas along the way.
 
 **[See the contributors →](ACKNOWLEDGEMENTS.md)**
-
-## Trademark / Not Affiliated
-
-This is an unofficial, open-source side project. **It is not affiliated with, endorsed by, or sponsored by Anthropic.** "Claude" and the Claude spark logo are trademarks of Anthropic, used here nominatively. This project is MIT licensed, but that covers the source code only and conveys no rights to Anthropic's trademarks or brand.
-
-If I'm violating or impeding your trademark, Contact me on X ([@mickces](https://x.com/mickces))
-This is a free side project; I'm not monetizing it.
 
 ## Contributing
 

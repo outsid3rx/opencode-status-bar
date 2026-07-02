@@ -1,0 +1,18 @@
+{
+  "$schema": "./node_modules/oxlint/configuration_schema.json",
+  "env": {
+    "node": true
+  },
+  "categories": {
+    "correctness": "warn",
+    "suspicious": "warn",
+    "pedantic": "off",
+    "perf": "warn",
+    "style": "off"
+  },
+  "rules": {
+    "no-unused-vars": "error",
+    "no-console": "off"
+  },
+  "ignorePatterns": ["build/", "node_modules/", ".opencode/", "dist/", "*.dmg"]
+}
