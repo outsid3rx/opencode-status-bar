@@ -44,7 +44,7 @@ Everything is controlled from the menu:
 
 ### Option A — DMG (recommended)
 
-1. Download the latest `OpenCodeStatusBar.dmg` from [Releases](https://github.com/outsid3rx/opencode-status-bar/releases).
+1. Download the latest [`OpenCodeStatusBar.dmg`](https://github.com/outsid3rx/opencode-status-bar/releases/latest/download/OpenCodeStatusBar.dmg) from [Releases](https://github.com/outsid3rx/opencode-status-bar/releases).
 2. Open it and drag **OpenCode Status Bar** into Applications.
 3. Because the DMG is not signed with an Apple Developer ID, macOS will show a Gatekeeper warning. Remove the quarantine flag:
 
